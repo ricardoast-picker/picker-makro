@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Picker × Makro Colombia — Research Brief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: hsl(212 100% 97%); --card: hsl(0 0% 100%); --border: hsl(214 33% 91%);
+      --text: hsl(229 35% 16%); --sub: hsl(222 18% 38%); --muted: hsl(216 30% 60%);
+      --celeste: hsl(193 100% 45%); --celeste-dim: hsl(193 100% 45% / .12); --celeste-mid: hsl(193 100% 45% / .3);
+      --green: hsl(162 100% 36%); --green-dim: hsl(162 100% 44% / .12); --green-mid: hsl(162 100% 44% / .3); --green-text: hsl(162 100% 28%);
+      --amber: hsl(43 100% 45%); --amber-bg: hsl(43 100% 67% / .15);
+      --red: hsl(346 100% 45%); --red-bg: hsl(346 100% 63% / .1);
+    }
+    html, body { height: 100%; background: var(--bg); font-family: 'Montserrat', sans-serif; color: var(--text); overflow: hidden; }
+    #deck { width: 100vw; height: 100vh; position: relative; }
+    .slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 52px 72px; opacity: 0; transform: translateX(36px); transition: opacity .4s cubic-bezier(.4,0,.2,1), transform .4s cubic-bezier(.4,0,.2,1); pointer-events: none; overflow: hidden; background: var(--bg); }
+    .slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+    .slide.exit { opacity: 0; transform: translateX(-36px); }
+    #nav { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; z-index: 100; }
+    .nav-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; box-shadow: 0 1px 4px hsl(229 35% 16% / .08); }
+    .nav-btn:hover { border-color: var(--celeste); color: var(--celeste); }
+    .nav-btn:disabled { opacity: .35; cursor: default; }
+    .nav-btn svg { width: 15px; height: 15px; }
+    #indicators { display: flex; gap: 6px; align-items: center; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all .25s; cursor: pointer; }
+    .dot.on { background: var(--celeste); width: 22px; border-radius: 3px; }
+    #slide-num { position: fixed; top: 22px; right: 28px; font-size: 11px; color: var(--muted); letter-spacing: .05em; font-weight: 600; }
+    .tag { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--green-text); border: 1px solid var(--green-mid); background: var(--green-dim); padding: 4px 12px; border-radius: 4px; margin-bottom: 18px; }
+    .tag.blue { color: var(--celeste); border-color: var(--celeste-mid); background: var(--celeste-dim); }
+    .tag.amber { color: var(--amber); border-color: hsl(43 100% 45% / .3); background: var(--amber-bg); }
+    .tag.red { color: var(--red); border-color: hsl(346 100% 45% / .25); background: var(--red-bg); }
+    h1 { font-size: clamp(34px, 4.5vw, 58px); font-weight: 800; line-height: 1.07; }
+    h2 { font-size: clamp(22px, 2.8vw, 38px); font-weight: 700; line-height: 1.15; }
+    .sub { font-size: clamp(13px, 1.1vw, 15px); color: var(--sub); font-weight: 400; line-height: 1.65; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; box-shadow: 0 1px 6px hsl(229 35% 16% / .06); }
+    .card-accent { background: var(--green-dim); border: 1px solid var(--green-mid); border-radius: 14px; padding: 22px 26px; }
+    .card-celeste { background: var(--celeste-dim); border: 1px solid var(--celeste-mid); border-radius: 14px; padding: 22px 26px; }
+    .card-amber { background: var(--amber-bg); border: 1px solid hsl(43 100% 45% / .3); border-radius: 14px; padding: 22px 26px; }
+    .card-red { background: var(--red-bg); border: 1px solid hsl(346 100% 45% / .25); border-radius: 14px; padding: 20px 24px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 100%; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; }
+    .stat .val { font-size: clamp(20px, 2.6vw, 32px); font-weight: 800; }
+    .stat .val.g { color: var(--green-text); } .stat .val.b { color: var(--celeste); } .stat .val.a { color: var(--amber); }
+    .stat .lbl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+    .stat .desc { font-size: 11px; color: var(--sub); margin-top: 2px; }
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl th { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 700; padding: 9px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+    .tbl td { padding: 11px 13px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--border); }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl .green { color: var(--green-text) !important; font-weight: 700; }
+    .tbl .amber { color: var(--amber) !important; font-weight: 700; }
+    .tbl .red { color: var(--red) !important; font-weight: 700; }
+    .divider { width: 100%; height: 1px; background: var(--border); margin: 12px 0; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; background: var(--green-dim); color: var(--green-text); border: 1px solid var(--green-mid); }
+    .pill.b { background: var(--celeste-dim); color: var(--celeste); border-color: var(--celeste-mid); }
+    .pill.a { background: var(--amber-bg); color: var(--amber); border-color: hsl(43 100% 45% / .3); }
+    .content { position: relative; z-index: 1; width: 100%; max-width: 1080px; }
+    .row-list { display: flex; flex-direction: column; gap: 9px; }
+    .row-item { display: flex; align-items: flex-start; gap: 11px; font-size: 13px; font-weight: 500; color: var(--sub); line-height: 1.5; }
+    .row-dot { min-width: 7px; height: 7px; border-radius: 50%; background: var(--celeste); margin-top: 5px; }
+    .row-dot.g { background: var(--green); } .row-dot.a { background: var(--amber); } .row-dot.r { background: var(--red); }
+    .med-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; font-size: 11px; font-weight: 900; }
+    .med-ok { background: var(--green-dim); color: var(--green-text); border: 1px solid var(--green-mid); }
+    .med-mid { background: var(--amber-bg); color: var(--amber); border: 1px solid hsl(43 100% 45% / .3); }
+    .med-no { background: var(--red-bg); color: var(--red); border: 1px solid hsl(346 100% 45% / .25); }
+    .q-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: flex; gap: 13px; align-items: flex-start; }
+    .q-num { min-width: 26px; height: 26px; border-radius: 50%; background: var(--celeste-dim); border: 1px solid var(--celeste-mid); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: var(--celeste); }
+    .q-text { font-size: 13px; font-weight: 500; color: var(--sub); line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div id="deck">
+
+  <!-- SLIDE 1 — COVER -->
+  <div class="slide active">
+    <div class="content" style="display:flex;gap:60px;align-items:center;">
+      <div style="flex:1;">
+        <div class="tag amber">Research Brief · Intro Meeting · 28 may</div>
+        <h1 style="margin-bottom:16px;">Makro Colombia</h1>
+        <p class="sub" style="max-width:460px;margin-bottom:30px;">Mayorista Food Cash & Carry con 22 tiendas y canal de domicilios propio. Omar Sastre (Coordinador de Transporte) confirmó reunión. Lead referido por Laura Aguirre.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <span class="pill b">ICP Fit: B+</span>
+          <span class="pill a">Lead outbound</span>
+          <span class="pill">Contacto: Omar Sastre</span>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div class="grid2" style="gap:14px;">
+          <div class="stat"><span class="val b">22</span><span class="lbl">Tiendas en Colombia</span><span class="desc">13 ciudades</span></div>
+          <div class="stat"><span class="val g">+9.7%</span><span class="lbl">Meta crecimiento</span><span class="desc">ventas próximos meses</span></div>
+          <div class="stat"><span class="val">HoReCa</span><span class="lbl">Segmento principal</span><span class="desc">+ familias mayoristas</span></div>
+          <div class="stat"><span class="val a">B2B</span><span class="lbl">Modelo core</span><span class="desc">Food Cash & Carry</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 — LA EMPRESA -->
+  <div class="slide">
+    <div class="content">
+      <div class="tag blue">La empresa</div>
+      <h2 style="margin-bottom:22px;">Makro Colombia — Mayorista Food Cash & Carry</h2>
+      <div class="grid2" style="gap:18px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Operación</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span><strong>22 tiendas</strong> en Colombia — 13 ciudades (Bogotá ×4, Medellín, Cali, Barranquilla, Cartagena, Cúcuta, Ibagué, Pereira, Tunja, Villavicencio, Montería, Santa Marta, Valledupar)</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Tiendas de <strong>4,000 a 9,900 m²</strong></span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Bodega logística central: <strong>Parque Logístico INNOVA</strong>, Tenjo, Cundinamarca</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>NIT: 900 059 238-5 | Web: makro.com.co</span></div>
+            </div>
+          </div>
+          <div class="card-accent">
+            <p style="font-size:11px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Modelo de negocio</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span><strong>HoReCa</strong> (Hoteles, Restaurantes, Cafeterías) — cliente principal</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Familias mayoristas — segundo segmento</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Compra en volumen = precios mayoristas</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span>Meta: incrementar ventas <strong>+9.7%</strong></span></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Canal digital y delivery hoy</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot a"></div><span>Tienda online: <strong>tienda.makro.com.co</strong></span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Domicilios via <strong>Domicilios.com</strong> — solo Bogotá y Cali</span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Cobertura de delivery muy limitada vs 22 tiendas activas</span></div>
+              <div class="row-item"><div class="row-dot r"></div><span>Sin plataforma de orquestación propia confirmada</span></div>
+            </div>
+          </div>
+          <div class="card-celeste">
+            <p style="font-size:11px;font-weight:700;color:var(--celeste);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Oportunidad Picker</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot"></div><span>Logística desde <strong>bodega central → clientes HoReCa B2B</strong> — caso de uso diferente a retail</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>Expandir cobertura de domicilios más allá de Bogotá/Cali</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>Orquestación multi-carrier con flota propia + Rappi/Uber</span></div>
+              <div class="row-item"><div class="row-dot"></div><span>Ángulo de <strong>Mundial de Fútbol</strong> — demanda HoReCa +30-40%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 — CONTACTO -->
+  <div class="slide">
+    <div class="content">
+      <div class="tag amber">Contactos</div>
+      <h2 style="margin-bottom:22px;">Omar Sastre y el equipo Makro</h2>
+      <div class="grid2" style="gap:18px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Contacto principal — mañana</p>
+            <div style="display:flex;flex-direction:column;gap:0;">
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Nombre</span><span style="font-size:13px;font-weight:800;">Omar Sastre</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Cargo</span><span style="font-size:13px;font-weight:700;color:var(--celeste);">Coordinador de Transporte</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Email</span><span style="font-size:12px;font-weight:600;">aomar.sastre@makro.com.co</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Teléfono</span><span style="font-size:13px;font-weight:600;">311-481-2757</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;"><span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Ubicación</span><span style="font-size:12px;font-weight:500;">Parque INNOVA, Tenjo, Cund.</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Otros contactos Makro</p>
+            <table class="tbl">
+              <thead><tr><th>Nombre</th><th>Email</th></tr></thead>
+              <tbody>
+                <tr><td>Carlos Arévalo</td><td style="font-size:11px;">carlos.arevalo@makro.com.co</td></tr>
+                <tr><td>Lina Olarte</td><td style="font-size:11px;">lina.olarte@makro.com.co</td></tr>
+                <tr><td>María Celedón</td><td style="font-size:11px;">maria.celedon@makro.com.co</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card-accent">
+            <p style="font-size:11px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Historial de la conversación</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span><strong>29 abr:</strong> Primer contacto — referido por Laura Aguirre. Ricardo pregunta por "cómo gestionas el servicio de envíos a domicilio en su canal propio"</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span><strong>7 may:</strong> Follow-up con ángulo <em>"Mundial de Fútbol — demanda delivery +30-40%"</em></span></div>
+              <div class="row-item"><div class="row-dot g"></div><span><strong>26 may:</strong> Omar responde por primera vez: <em>"Podemos citar una reunión, dame 2 posibles fechas"</em></span></div>
+              <div class="row-item"><div class="row-dot g"></div><span><strong>26 may (mismo día):</strong> Ricardo propone <strong>mié 27 11:30am o jue 28 10:00am</strong></span></div>
+            </div>
+          </div>
+          <div class="card-amber">
+            <p style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Señales clave de Omar</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot a"></div><span>Tardó <strong>~3 semanas</strong> en responder — no es un lead urgente, pero sí hay interés</span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Opera desde bodega logística central (no desde tiendas) → su reto es <strong>distribución B2B, no retail</strong></span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Coordinador de Transporte = operativo. <strong>Confirmar quién aprueba presupuesto</strong></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 — MEDDPICC -->
+  <div class="slide">
+    <div class="content">
+      <div class="tag">MEDDPICC — Estado inicial</div>
+      <h2 style="margin-bottom:20px;">Qué tenemos · Qué falta</h2>
+      <div style="display:flex;flex-direction:column;gap:9px;width:100%;">
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">M</span><span style="font-size:13px;font-weight:700;">Metrics</span>
+          <span style="font-size:12px;color:var(--sub);">No confirmado</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">Preguntar: # domicilios/mes, cobertura actual, costo por envío</span>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">E</span><span style="font-size:13px;font-weight:700;">Economic Buyer</span>
+          <span style="font-size:12px;color:var(--sub);">No mapeado</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">Omar = operativo. Identificar quién aprueba plataformas/proveedores</span>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">D</span><span style="font-size:13px;font-weight:700;">Decision Criteria</span>
+          <span style="font-size:12px;color:var(--sub);">Desconocido</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">Mapear en reunión — cobertura, costo, integración</span>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">D</span><span style="font-size:13px;font-weight:700;">Decision Process</span>
+          <span style="font-size:12px;color:var(--sub);">Desconocido</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">¿Quién más involucrado? ¿Proceso de alta de proveedores?</span>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">P</span><span style="font-size:13px;font-weight:700;">Paper Process</span>
+          <span style="font-size:12px;color:var(--sub);">Desconocido</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">No mapeado — preguntar en Discovery</span>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--amber-bg);border:1px solid hsl(43 100% 45% / .3);border-radius:10px;">
+          <span class="med-badge med-mid">I</span><span style="font-size:13px;font-weight:700;">Identify Pain</span>
+          <span style="font-size:12px;color:var(--amber);font-weight:600;">Inferido ⚠</span>
+          <span style="font-size:12px;color:var(--sub);">Domicilios solo en Bogotá/Cali vs 22 tiendas — cobertura limitada. Confirmar en reunión.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--amber-bg);border:1px solid hsl(43 100% 45% / .3);border-radius:10px;">
+          <span class="med-badge med-mid">C</span><span style="font-size:13px;font-weight:700;">Champion</span>
+          <span style="font-size:12px;color:var(--amber);font-weight:600;">Candidato ⚠</span>
+          <span style="font-size:12px;color:var(--sub);">Omar Sastre — opera el transporte. Confirmar si puede vender internamente.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 145px 1fr 1fr;gap:14px;align-items:center;padding:11px 15px;background:var(--red-bg);border:1px solid hsl(346 100% 45% / .25);border-radius:10px;">
+          <span class="med-badge med-no">C</span><span style="font-size:13px;font-weight:700;">Competition</span>
+          <span style="font-size:12px;color:var(--sub);">Desconocido</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">Status quo: Domicilios.com (limitado). ¿Evalúan otra plataforma?</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5 — PREGUNTAS + PRÓXIMOS PASOS -->
+  <div class="slide">
+    <div class="content">
+      <div class="tag blue">Intro Meeting — 28 mayo</div>
+      <h2 style="margin-bottom:20px;">Preguntas clave · Riesgos · Next steps</h2>
+      <div class="grid2" style="gap:18px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:11px;">
+          <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">5 preguntas para la reunión</p>
+          <div class="q-card"><div class="q-num">1</div><p class="q-text">¿Cómo gestionan hoy los domicilios? ¿Flota propia, Domicilios.com, o algún otro carrier?</p></div>
+          <div class="q-card"><div class="q-num">2</div><p class="q-text">¿Cuántos pedidos a domicilio manejan al mes? ¿En qué ciudades están activos hoy?</p></div>
+          <div class="q-card"><div class="q-num">3</div><p class="q-text">El cliente de Makro es principalmente B2B (HoReCa) — ¿cómo coordinan las entregas a restaurantes y hoteles? ¿Es diferente al delivery retail?</p></div>
+          <div class="q-card"><div class="q-num">4</div><p class="q-text">Con el Mundial de Fútbol encima, ¿cómo están preparando la operación de delivery para el pico de demanda HoReCa?</p></div>
+          <div class="q-card"><div class="q-num">5</div><p class="q-text">¿Quién más está involucrado en decisiones de plataformas logísticas? ¿Cómo es el proceso de alta de proveedores en Makro?</p></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card-red">
+            <p style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Riesgos</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot r"></div><span>Omar es operativo — el <strong>Economic Buyer</strong> puede estar más arriba (Director de Logística o similiar)</span></div>
+              <div class="row-item"><div class="row-dot r"></div><span>El modelo B2B de Makro es diferente a retail — <strong>validar si el caso de uso encaja</strong> bien con Picker</span></div>
+              <div class="row-item"><div class="row-dot a"></div><span>Tardó 3 semanas en responder — puede ser un lead frío o con bajo nivel de urgencia</span></div>
+            </div>
+          </div>
+          <div class="card-accent">
+            <p style="font-size:11px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Próximas acciones</p>
+            <div class="row-list">
+              <div class="row-item"><div class="row-dot g"></div><span><strong>Ángulo de apertura:</strong> Mundial de Fútbol — pico de demanda HoReCa ya en camino</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span><strong>Objetivo reunión:</strong> mapear volumen, pain real y quién aprueba</span></div>
+              <div class="row-item"><div class="row-dot g"></div><span><strong>Outcome deseado:</strong> agendar Discovery con demo en vivo</span></div>
+            </div>
+          </div>
+          <div class="card" style="text-align:center;padding:16px;">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:4px;">Etapa del deal</p>
+            <p style="font-size:16px;font-weight:800;color:var(--celeste);">Intro Meeting → Discovery</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="slide-num">1 / 5</div>
+<div id="nav">
+  <button class="nav-btn" id="prev" onclick="move(-1)" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div id="indicators"></div>
+  <button class="nav-btn" id="next" onclick="move(1)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+</div>
+<script>
+  const slides = document.querySelectorAll('.slide'), total = slides.length; let cur = 0;
+  const iw = document.getElementById('indicators');
+  slides.forEach((_,i) => { const d = document.createElement('div'); d.className='dot'+(i===0?' on':''); d.onclick=()=>go(i); iw.appendChild(d); });
+  function go(n) { slides[cur].classList.remove('active'); slides[cur].classList.add('exit'); setTimeout(()=>slides[cur].classList.remove('exit'),420); cur=n; slides[cur].classList.add('active'); document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur)); document.getElementById('slide-num').textContent=`${cur+1} / ${total}`; document.getElementById('prev').disabled=cur===0; document.getElementById('next').disabled=cur===total-1; }
+  function move(d) { if(cur+d>=0&&cur+d<total) go(cur+d); }
+  document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='ArrowDown') move(1); if(e.key==='ArrowLeft'||e.key==='ArrowUp') move(-1); });
+</script>
+</body>
+</html>
